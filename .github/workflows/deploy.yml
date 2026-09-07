@@ -41,13 +41,19 @@ jobs:
           if [ ! -d ".git" ]; then
             echo "📦 Folder belum berupa repo git. Menginisialisasi git..."
             git init
-            git remote add origin https://github.com/fathurdja/FrontendfathurStore.git || git remote set-url origin https://github.com/fathurdja/FrontendfathurStore.git
           fi
+          
+          # Gunakan token autentikasi otomatis GitHub Actions (bebas error SSH / publickey)
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
           
           # 3. Tarik kode terbaru dari branch master
           echo "📥 Menarik source code terbaru..."
           git fetch origin master
           git reset --hard origin/master
+
+          # Kembalikan URL remote ke URL bersih tanpa token
+          git remote set-url origin "https://github.com/${{ github.repository }}.git"
           
           # 4. Cek file environment (.env.production / .env.local)
           if [ ! -f ".env.production" ] && [ ! -f ".env.local" ]; then
