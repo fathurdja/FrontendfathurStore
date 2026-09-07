@@ -58,7 +58,7 @@ jobs:
           
           # 5. Install / update dependency Node.js
           echo "📦 Menginstall dependencies npm..."
-          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps --cache "$HOME/.npm"
           
           # 6. Build aplikasi Next.js
           echo "🏗️ Membangun (build) aplikasi Next.js..."
