@@ -43,20 +43,10 @@ jobs:
             git init
           fi
           
-          # Set remote origin dengan token autentikasi GitHub Actions
-          if git remote | grep -q "^origin$"; then
-            git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-          else
-            git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-          fi
-          
-          # 3. Tarik kode terbaru dari branch master
+          # 3. Tarik kode terbaru langsung menggunakan token autentikasi GitHub Actions (tanpa ubah config)
           echo "📥 Menarik source code terbaru..."
-          git fetch origin master
-          git reset --hard origin/master
-
-          # Kembalikan URL remote ke URL bersih tanpa token
-          git remote set-url origin "https://github.com/${{ github.repository }}.git"
+          git fetch "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" master
+          git reset --hard FETCH_HEAD
           
           # 4. Cek file environment (.env.production / .env.local)
           if [ ! -f ".env.production" ] && [ ! -f ".env.local" ]; then
