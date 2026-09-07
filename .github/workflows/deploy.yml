@@ -43,9 +43,12 @@ jobs:
             git init
           fi
           
-          # Gunakan token autentikasi otomatis GitHub Actions (bebas error SSH / publickey)
-          git remote remove origin 2>/dev/null || true
-          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          # Set remote origin dengan token autentikasi GitHub Actions
+          if git remote | grep -q "^origin$"; then
+            git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          else
+            git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          fi
           
           # 3. Tarik kode terbaru dari branch master
           echo "📥 Menarik source code terbaru..."
