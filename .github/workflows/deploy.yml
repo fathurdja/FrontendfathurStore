@@ -1,0 +1,80 @@
+name: Deploy Frontend to Server
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: # Memungkinkan trigger manual dari tab Actions di GitHub
+
+jobs:
+  deploy:
+    name: Deploy Next.js Application
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull Latest Code, Build & Restart PM2
+        run: |
+          echo "🚀 Starting Frontend Deployment..."
+          
+          # 1. Pastikan PATH Node.js & PM2 terbaca di non-login shell GitHub Runner
+          export PATH=$PATH:/usr/local/bin:/usr/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin:/www/server/nodejs/v20*/bin:/www/server/nodejs/v18*/bin
+          if [ -s "$HOME/.nvm/nvm.sh" ]; then
+            . "$HOME/.nvm/nvm.sh"
+          fi
+          
+          echo "Node version: $(node -v 2>/dev/null || echo 'Node not found')"
+          echo "NPM version: $(npm -v 2>/dev/null || echo 'NPM not found')"
+          echo "PM2 version: $(pm2 -v 2>/dev/null || echo 'PM2 not found')"
+          
+          # 2. Tentukan direktori website frontend di server (aaPanel)
+          # Silakan sesuaikan path direktori jika berbeda di aaPanel Anda
+          TARGET_DIR="/www/wwwroot/FrontendfathurStore"
+          
+          # Cegah error dubious ownership jika owner folder berbeda
+          git config --global --add safe.directory "$TARGET_DIR"
+
+          # Pastikan direktori ada
+          mkdir -p "$TARGET_DIR"
+          cd "$TARGET_DIR"
+          
+          # Jika folder di server belum ada .git, lakukan inisialisasi otomatis
+          if [ ! -d ".git" ]; then
+            echo "📦 Folder belum berupa repo git. Menginisialisasi git..."
+            git init
+            git remote add origin https://github.com/fathurdja/FrontendfathurStore.git || git remote set-url origin https://github.com/fathurdja/FrontendfathurStore.git
+          fi
+          
+          # 3. Tarik kode terbaru dari branch master
+          echo "📥 Menarik source code terbaru..."
+          git fetch origin master
+          git reset --hard origin/master
+          
+          # 4. Cek file environment (.env.production / .env.local)
+          if [ ! -f ".env.production" ] && [ ! -f ".env.local" ]; then
+            echo "⚠️ File environment belum ada. Meng-copy dari .env.example..."
+            if [ -f ".env.example" ]; then
+              cp .env.example .env.production
+            fi
+          fi
+          
+          # 5. Install / update dependency Node.js
+          echo "📦 Menginstall dependencies npm..."
+          npm install --legacy-peer-deps
+          
+          # 6. Build aplikasi Next.js
+          echo "🏗️ Membangun (build) aplikasi Next.js..."
+          npm run build
+          
+          # 7. Restart atau Start aplikasi menggunakan PM2
+          echo "🔄 Merestart aplikasi menggunakan PM2..."
+          APP_NAME="ftr-frontend"
+          if pm2 describe "$APP_NAME" > /dev/null 2>&1; then
+            pm2 reload "$APP_NAME"
+          else
+            pm2 start npm --name "$APP_NAME" -- start
+          fi
+          
+          # Simpan daftar proses PM2 agar otomatis jalan saat server reboot
+          pm2 save
+          
+          echo "✅ Frontend deployment completed successfully!"
