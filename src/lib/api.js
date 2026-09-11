@@ -2,7 +2,24 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const getApiBaseUrl = () => {
+  let url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url) {
+    url = process.env.NODE_ENV === 'production'
+      ? 'https://api.ftr-lab.web.id/api'
+      : 'http://localhost:8000/api';
+  }
+  // Remove trailing slashes
+  url = url.replace(/\/+$/, '');
+  // Ensure /api suffix
+  if (!url.endsWith('/api')) {
+    url += '/api';
+  }
+  return url;
+};
+
+export const API_BASE_URL = getApiBaseUrl();
+export const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
 
 const api = axios.create({
   baseURL: API_BASE_URL,

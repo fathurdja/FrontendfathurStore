@@ -7,7 +7,7 @@ import {
   XCircle, Clock, Loader2, LogOut, ArrowLeft, ChevronRight, RefreshCw,
   DollarSign, Activity 
 } from 'lucide-react';
-import { getAdminDashboard, getAdminTransactions } from '@/lib/api';
+import { getAdminDashboard, getAdminTransactions, STORAGE_BASE_URL } from '@/lib/api';
 import { formatRupiah, formatShortDate, getStatusLabel, getStatusClass } from '@/lib/utils';
 import useAppStore from '@/store/useAppStore';
 
@@ -301,9 +301,9 @@ export default function AdminDashboardPage() {
               {selectedTx.payment_proof && (
                 <div className="mt-4">
                   <p className="text-xs font-bold text-text-muted mb-2 uppercase">Bukti Pembayaran</p>
-                  <a href={`http://localhost:8000/storage/${selectedTx.payment_proof}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`${STORAGE_BASE_URL}/storage/${selectedTx.payment_proof}`} target="_blank" rel="noopener noreferrer">
                     <img 
-                      src={`http://localhost:8000/storage/${selectedTx.payment_proof}`} 
+                      src={`${STORAGE_BASE_URL}/storage/${selectedTx.payment_proof}`} 
                       alt="Bukti Transfer" 
                       className="w-full h-auto rounded-lg border border-border object-contain max-h-64"
                     />

@@ -48,12 +48,20 @@ jobs:
           git fetch "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" master
           git reset --hard FETCH_HEAD
           
-          # 4. Cek file environment (.env.production / .env.local)
-          if [ ! -f ".env.production" ] && [ ! -f ".env.local" ]; then
-            echo "⚠️ File environment belum ada. Meng-copy dari .env.example..."
-            if [ -f ".env.example" ]; then
-              cp .env.example .env.production
-            fi
+          # 4. Pastikan file environment production (.env.production) menggunakan URL API produksi
+          if [ ! -f ".env.production" ]; then
+            echo "NEXT_PUBLIC_API_URL=https://api.ftr-lab.web.id/api" > .env.production
+            echo "NEXT_PUBLIC_APP_NAME=\"FTR Store\"" >> .env.production
+          else
+            # Jika .env.production masih menggunakan localhost, ganti ke API produksi
+            sed -i 's|http://localhost:8000/api|https://api.ftr-lab.web.id/api|g' .env.production
+            sed -i 's|http://localhost:8000|https://api.ftr-lab.web.id|g' .env.production
+          fi
+
+          # Jika ada .env.local di server yang masih berisi localhost, sesuaikan agar tidak meng-override
+          if [ -f ".env.local" ]; then
+            sed -i 's|http://localhost:8000/api|https://api.ftr-lab.web.id/api|g' .env.local
+            sed -i 's|http://localhost:8000|https://api.ftr-lab.web.id|g' .env.local
           fi
           
           # 5. Install / update dependency Node.js
@@ -62,7 +70,7 @@ jobs:
           
           # 6. Build aplikasi Next.js
           echo "🏗️ Membangun (build) aplikasi Next.js..."
-          npm run build
+          NEXT_PUBLIC_API_URL="https://api.ftr-lab.web.id/api" npm run build
           
           # 7. Restart atau Start aplikasi menggunakan PM2
           echo "🔄 Merestart aplikasi menggunakan PM2..."
