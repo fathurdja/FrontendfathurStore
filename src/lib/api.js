@@ -4,11 +4,26 @@ import axios from 'axios';
 
 const getApiBaseUrl = () => {
   let url = process.env.NEXT_PUBLIC_API_URL;
-  if (!url) {
-    url = process.env.NODE_ENV === 'production'
-      ? 'https://api.ftr-lab.web.id/api'
-      : 'http://localhost:8000/api';
+
+  // Jika di production atau URL tidak ada, atau mengandung localhost di production
+  if (process.env.NODE_ENV === 'production') {
+    if (!url || url.includes('localhost') || url.includes('127.0.0.1')) {
+      url = 'https://api.ftr-lab.web.id/api';
+    }
+  } else {
+    if (!url) {
+      url = 'http://localhost:8000/api';
+    }
   }
+
+  // Jika dijalankan di browser dan domain bukan localhost/127.0.0.1, jangan pernah panggil localhost
+  if (typeof window !== 'undefined') {
+    const isBrowserLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isBrowserLocal && (url.includes('localhost') || url.includes('127.0.0.1'))) {
+      url = 'https://api.ftr-lab.web.id/api';
+    }
+  }
+
   // Remove trailing slashes
   url = url.replace(/\/+$/, '');
   // Ensure /api suffix
@@ -30,9 +45,14 @@ const api = axios.create({
   timeout: 15000,
 });
 
-// Request interceptor — attach auth token if available
+// Request interceptor — attach auth token if available & protect against localhost in production
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isLocal && config.baseURL && (config.baseURL.includes('localhost') || config.baseURL.includes('127.0.0.1'))) {
+      config.baseURL = 'https://api.ftr-lab.web.id/api';
+    }
+
     const token = localStorage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
